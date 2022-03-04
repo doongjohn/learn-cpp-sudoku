@@ -1,0 +1,6 @@
+target('sudoku')
+  set_kind('binary')
+  set_toolchains('clang')
+  set_languages('cxx20')
+  add_includedirs('src')
+  add_files('src/*.cpp')
