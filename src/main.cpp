@@ -28,7 +28,7 @@ namespace ranges = std::ranges;
 using SudokuGrid = array<int, 81>;
 using SudokuBox = array<int, 9>;
 using SudokuRow = array<SudokuBox, 3>;
-using SudokuSingleRows = array<array<int, 9>, 3>;
+using SudokuRowRows = array<array<int, 9>, 3>;
 
 static void apply_to(SudokuGrid &grid, const array<SudokuRow, 3> &rows) {
   for (int r = 0; r < 3; ++r)
@@ -178,7 +178,8 @@ static SudokuRow create_random_fr_valid_row2(std::mt19937 &rng, const SudokuRow 
   };
 
   // TODO: review this algorithm
-  // I don't know how this is working...
+  // FIXME: this algorithm can produce overlapping numbers
+  // I don't know how this works...
   array<int, 9> fr{
     cols[0][0],
     cols[1][0],
@@ -215,7 +216,7 @@ static SudokuRow create_random_fr_valid_row2(std::mt19937 &rng, const SudokuRow 
   return result;
 }
 
-static SudokuSingleRows to_single_rows(const SudokuRow &row) {
+static SudokuRowRows to_rows(const SudokuRow &row) {
   return {{
     {{ row[0][0], row[0][1], row[0][2], row[1][0], row[1][1], row[1][2], row[2][0], row[2][1], row[2][2] }},
     {{ row[0][3], row[0][4], row[0][5], row[1][3], row[1][4], row[1][5], row[2][3], row[2][4], row[2][5] }},
@@ -223,32 +224,32 @@ static SudokuSingleRows to_single_rows(const SudokuRow &row) {
   }};
 }
 
-static void apply_to(SudokuRow &row, const SudokuSingleRows &sr) {
+static void apply_to(SudokuRow &row, const SudokuRowRows &rr) {
   for (int i = 0; i < 3; ++i) {
-    row[0][i] = sr[0][i];
-    row[0][i + 3] = sr[1][i];
-    row[0][i + 6] = sr[2][i];
-    row[1][i] = sr[0][i + 3];
-    row[1][i + 3] = sr[1][i + 3];
-    row[1][i + 6] = sr[2][i + 3];
-    row[2][i] = sr[0][i + 6];
-    row[2][i + 3] = sr[1][i + 6];
-    row[2][i + 6] = sr[2][i + 6];
+    row[0][i] = rr[0][i];
+    row[0][i + 3] = rr[1][i];
+    row[0][i + 6] = rr[2][i];
+    row[1][i] = rr[0][i + 3];
+    row[1][i + 3] = rr[1][i + 3];
+    row[1][i + 6] = rr[2][i + 3];
+    row[2][i] = rr[0][i + 6];
+    row[2][i + 3] = rr[1][i + 6];
+    row[2][i + 6] = rr[2][i + 6];
   }
 }
 
-static void make_valid_sr(SudokuSingleRows &sr) {
-  // TODO: review this code
+static void make_valid_rr(SudokuRowRows &rr) {
+  // FIXME: this algorithm sometimes can't fill some cells
   std::cout << "-> running the algorithm... (sr[1], sr[2])\n";
   int lastpos = 0;
   for (int i = 0; i < 9;) {
     // find overlapping
-    if (ranges::count(sr[1], sr[1][i]) == 2) {
+    if (ranges::count(rr[1], rr[1][i]) == 2) {
       // get overlapping index before actually swapping
-      int overlap_index = ranges::index_of(sr[1], sr[2][i]);
-      int num = sr[1][i];
-      sr[1][i] = sr[2][i];
-      sr[2][i] = num;
+      int overlap_index = ranges::index_of(rr[1], rr[2][i]);
+      int num = rr[1][i];
+      rr[1][i] = rr[2][i];
+      rr[2][i] = num;
       // follow the overlapping index
       if (overlap_index != -1) {
         i = overlap_index;
@@ -264,20 +265,117 @@ static void make_valid_sr(SudokuSingleRows &sr) {
 
   // TEMP: result validation
   array<int, 9> all_sorted = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-  array<int, 9> sr1_sorted = sr[1];
-  array<int, 9> sr2_sorted = sr[2];
-  ranges::sort(sr1_sorted);
-  ranges::sort(sr2_sorted);
-  if (all_sorted == sr1_sorted && all_sorted == sr2_sorted)
+  array<int, 9> rr1_sorted = rr[1];
+  array<int, 9> rr2_sorted = rr[2];
+  ranges::sort(rr1_sorted);
+  ranges::sort(rr2_sorted);
+  if (all_sorted == rr1_sorted && all_sorted == rr2_sorted)
     std::cout << "   -> valid\n";
   else
     std::cout << "   -> invalid\n";
 }
 
 static void make_valid(SudokuRow &row) {
-  SudokuSingleRows sr = to_single_rows(row);
-  make_valid_sr(sr);
-  apply_to(row, sr);
+  SudokuRowRows rr = to_rows(row);
+  make_valid_rr(rr);
+  apply_to(row, rr);
+}
+
+static bool check_valid(SudokuGrid grid) {
+  // TODO: check if the given sudoku grid is valid
+
+  const array<int, 9> nums{ 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+  // check rows
+  std::cout << "checking grid rows...\n";
+  for (int i = 0; i < 9; ++i) {
+    int count = array_eq_count_sorted(
+        nums, array{
+          grid[9 * i],
+          grid[9 * i + 1],
+          grid[9 * i + 2],
+          grid[9 * i + 3],
+          grid[9 * i + 4],
+          grid[9 * i + 5],
+          grid[9 * i + 6],
+          grid[9 * i + 7],
+          grid[9 * i + 8]
+        }
+      );
+    std::cout << grid[9 * i] << ' ';
+    std::cout << grid[9 * i + 1] << ' ';
+    std::cout << grid[9 * i + 2] << ' ';
+    std::cout << grid[9 * i + 3] << ' ';
+    std::cout << grid[9 * i + 4] << ' ';
+    std::cout << grid[9 * i + 5] << ' ';
+    std::cout << grid[9 * i + 6] << ' ';
+    std::cout << grid[9 * i + 7] << ' ';
+    std::cout << grid[9 * i + 8] << '\n';
+    if (count != 9) {
+      std::cout << "invalid at " << i << '\n';
+      return false;
+    }
+  }
+  // check columns
+  std::cout << "checking grid columns...\n";
+  for (int i = 0; i < 9; ++i) {
+    int count = array_eq_count_sorted(
+        nums, array{
+          grid[i],
+          grid[i + 9],
+          grid[i + 18],
+          grid[i + 27],
+          grid[i + 36],
+          grid[i + 45],
+          grid[i + 54],
+          grid[i + 63],
+          grid[i + 72]
+        }
+      );
+    std::cout << grid[i] << ' ';
+    std::cout << grid[i + 9] << ' ';
+    std::cout << grid[i + 18] << ' ';
+    std::cout << grid[i + 27] << ' ';
+    std::cout << grid[i + 36] << ' ';
+    std::cout << grid[i + 45] << ' ';
+    std::cout << grid[i + 54] << ' ';
+    std::cout << grid[i + 63] << ' ';
+    std::cout << grid[i + 72] << '\n';
+    if (count != 9) {
+      std::cout << "invalid at " << i << '\n';
+      return false;
+    }
+  }
+  // check boxes
+  std::cout << "checking grid boxes...\n";
+  for (int i = 0; i < 9; ++i) {
+    int count = array_eq_count_sorted(
+        nums, array{
+          grid[i * 3 + i / 3 * 18],
+          grid[i * 3 + i / 3 * 18 + 1],
+          grid[i * 3 + i / 3 * 18 + 2],
+          grid[i * 3 + i / 3 * 18 + 9],
+          grid[i * 3 + i / 3 * 18 + 10],
+          grid[i * 3 + i / 3 * 18 + 11],
+          grid[i * 3 + i / 3 * 18 + 18],
+          grid[i * 3 + i / 3 * 18 + 19],
+          grid[i * 3 + i / 3 * 18 + 20]
+        }
+      );
+    std::cout << grid[i * 3 + i / 3 * 18] << ' ';
+    std::cout << grid[i * 3 + i / 3 * 18 + 1] << ' ';
+    std::cout << grid[i * 3 + i / 3 * 18 + 2] << ' ';
+    std::cout << grid[i * 3 + i / 3 * 18 + 9] << ' ';
+    std::cout << grid[i * 3 + i / 3 * 18 + 10] << ' ';
+    std::cout << grid[i * 3 + i / 3 * 18 + 11] << ' ';
+    std::cout << grid[i * 3 + i / 3 * 18 + 18] << ' ';
+    std::cout << grid[i * 3 + i / 3 * 18 + 19] << ' ';
+    std::cout << grid[i * 3 + i / 3 * 18 + 20] << '\n';
+    if (count != 9) {
+      std::cout << "invalid at " << i << '\n';
+      return false;
+    }
+  }
+  return true;
 }
 
 static void print(const SudokuGrid &grid) {
@@ -319,6 +417,11 @@ int main() {
   // apply sudoku rows to the grid array
   apply_to(grid, { row0, row1, row2 });
   print(grid);
+
+  if (check_valid(grid))
+    std::cout << "grid valid\n";
+  else
+    std::cout << "grid invalid\n";
 
   return 0;
 }
