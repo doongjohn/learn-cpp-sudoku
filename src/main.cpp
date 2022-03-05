@@ -13,7 +13,6 @@
 // https://github.com/robatron/sudoku.js
 // https://github.com/ZeroX-DG/vudoku
 
-#include <span>
 #include <array>
 #include <ranges>
 #include <random>
@@ -24,7 +23,6 @@
 #include "ranges_utils.hpp"
 
 using std::array;
-using std::span;
 namespace ranges = std::ranges;
 
 using SudokuGrid = array<int, 81>;
