@@ -45,9 +45,9 @@ static SudokuBox create_random_box(std::mt19937 &rng) {
 
 static SudokuRow create_random_fr_valid_row0(std::mt19937 &rng) {
   SudokuRow result = {};
-  array<int, 9> nums{ 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 
   // fill the first row with unique numbers
+  array<int, 9> nums{ 1, 2, 3, 4, 5, 6, 7, 8, 9 };
   ranges::shuffle(nums, rng);
   int n = 0;
   for (int b = 0; b < 3; ++b) {
@@ -65,7 +65,6 @@ static SudokuRow create_random_fr_valid_row0(std::mt19937 &rng) {
         result[b][i++] = nums[n];
     }
   }
-
   return result;
 }
 
@@ -173,7 +172,8 @@ static SudokuRow create_random_fr_valid_row2(std::mt19937 &rng, const SudokuRow 
   };
 
   // TODO: review this algorithm
-  // I don't know how this works...
+  // maybe it has a chance to loop infinitly?
+  // I don't know how this is working...
   array<int, 9> fr{
     cols[0][0],
     cols[1][0],
@@ -193,10 +193,10 @@ static SudokuRow create_random_fr_valid_row2(std::mt19937 &rng, const SudokuRow 
       if (ranges::contains(fr, num)) {
         cols[i][0] = cols[i][1 + p];
         cols[i][1 + p] = num;
-        p ^= 1;
       }
       fr[i] = cols[i][0];
     }
+    p ^= 1;
     if (array_eq_count(fr, nums) == 9) {
       for (int i = 0; i < 9; ++i) {
         result[i / 3][i % 3] = cols[i][0];
@@ -210,7 +210,7 @@ static SudokuRow create_random_fr_valid_row2(std::mt19937 &rng, const SudokuRow 
   return result;
 }
 
-static SudokuRowRows to_rows(const SudokuRow &row) {
+static SudokuRowRows split_rows(const SudokuRow &row) {
   return {{
     {{ row[0][0], row[0][1], row[0][2], row[1][0], row[1][1], row[1][2], row[2][0], row[2][1], row[2][2] }},
     {{ row[0][3], row[0][4], row[0][5], row[1][3], row[1][4], row[1][5], row[2][3], row[2][4], row[2][5] }},
@@ -233,9 +233,8 @@ static void apply_to(SudokuRow &row, const SudokuRowRows &rr) {
 }
 
 static void make_valid_rr(SudokuRowRows &rr) {
-  // FIXME: this can be infinite loop
   std::cout << "-> running the algorithm... (sr[1], sr[2])\n";
-  int lastpos = -1;
+  int lastpos = 0;
   for (int i = 0; i < 9;) {
     // find overlapping
     if (ranges::count(rr[1], rr[1][i]) == 2) {
@@ -247,7 +246,7 @@ static void make_valid_rr(SudokuRowRows &rr) {
       // follow the overlapping index
       if (overlap_index != -1) {
         i = overlap_index;
-        // lastpos = -1;
+        lastpos = -1;
       } else {
         i = ++lastpos;
       }
@@ -269,7 +268,7 @@ static void make_valid_rr(SudokuRowRows &rr) {
 }
 
 static void make_valid(SudokuRow &row) {
-  SudokuRowRows rr = to_rows(row);
+  SudokuRowRows rr = split_rows(row);
   make_valid_rr(rr);
   apply_to(row, rr);
 }
@@ -386,35 +385,38 @@ static void print(const SudokuGrid &grid) {
 }
 
 int main() {
-  // init random
-  std::random_device rd{};
-  std::mt19937 rng{rd()};
+  for (int i = 0; i < 1000; ++i) {
+    // init random
+    std::random_device rd{};
+    std::mt19937 rng{rd()};
 
-  // init sudoku grid
-  array<int, 81> grid{};
-  grid.fill(0);
+    // init sudoku grid
+    array<int, 81> grid{};
 
-  // this algorithm randomly fills the row of 3x3 boxes in a sudoku game with 1 to 9,
-  // with the first row (of three) also filling that condition.
-  SudokuRow row0 = create_random_fr_valid_row0(rng);
-  SudokuRow row1 = create_random_fr_valid_row1(rng, row0);
-  SudokuRow row2 = create_random_fr_valid_row2(rng, row0, row1);
-  // SudokuRow row2 = {};
+    // this algorithm randomly fills the row of 3x3 boxes in a sudoku game with 1 to 9,
+    // with the first row (of three) also filling that condition.
+    std::cout << "create random sudoku row\n";
+    SudokuRow row0 = create_random_fr_valid_row0(rng);
+    SudokuRow row1 = create_random_fr_valid_row1(rng, row0);
+    SudokuRow row2 = create_random_fr_valid_row2(rng, row0, row1);
 
-  // this algorithm fills each row with 1 to 9
-  // (but it skips the first row because it is already filled with 1 to 9 by the previous step)
-  make_valid(row0);
-  make_valid(row1);
-  make_valid(row2);
+    // this algorithm fills each row with 1 to 9
+    // (but it skips the first row because it is already filled with 1 to 9 by the previous step)
+    std::cout << "make sudoku row valid\n";
+    make_valid(row0);
+    make_valid(row1);
+    make_valid(row2);
 
-  // apply sudoku rows to the grid array
-  apply_to(grid, { row0, row1, row2 });
-  print(grid);
+    // apply sudoku rows to the grid array
+    apply_to(grid, { row0, row1, row2 });
+    print(grid);
 
-  if (check_valid(grid))
-    std::cout << "grid valid\n";
-  else
-    std::cout << "grid invalid\n";
-
+    if (check_valid(grid)) {
+      std::cout << "grid valid\n";
+    } else {
+      std::cout << "grid invalid\n";
+      break;
+    }
+  }
   return 0;
 }
