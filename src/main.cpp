@@ -44,25 +44,25 @@ static SudokuBox create_random_box(std::mt19937 &rng) {
 }
 
 static SudokuRow create_random_fr_valid_row0(std::mt19937 &rng) {
-  SudokuRow result{};
+  SudokuRow result = {};
   array<int, 9> nums{ 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 
   // fill the first row with unique numbers
   ranges::shuffle(nums, rng);
   int n = 0;
-  for (int r = 0; r < 3; ++r) {
+  for (int b = 0; b < 3; ++b) {
     for (int i = 0; i < 3; ++i) {
-      result[r][i] = nums[n++];
+      result[b][i] = nums[n++];
     }
   }
 
   // fill other two rows
-  for (int r = 0; r < 3; ++r) {
+  for (int b = 0; b < 3; ++b) {
     ranges::shuffle(nums, rng);
     n = 0;
     for (int i = 3; i < 9; ++n) {
-      if (result[r][0] != nums[n] && result[r][1] != nums[n] && result[r][2] != nums[n])
-        result[r][i++] = nums[n];
+      if (result[b][0] != nums[n] && result[b][1] != nums[n] && result[b][2] != nums[n])
+        result[b][i++] = nums[n];
     }
   }
 
@@ -75,12 +75,12 @@ static SudokuRow create_random_fr_valid_row1(std::mt19937 &rng, const SudokuRow 
   // fill the first row with random unique numbers
   array<int, 9> nums{ 1, 2, 3, 4, 5, 6, 7, 8, 9 };
   ranges::shuffle(nums, rng);
-  for (int r = 0; r < 3; ++r) {
+  for (int b = 0; b < 3; ++b) {
     for (int c = 0; c < 3; ++c) {
-      const array<int, 3> col2{ row0[r][c], row0[r][c + 3], row0[r][c + 6] };
+      const array<int, 3> col2{ row0[b][c], row0[b][c + 3], row0[b][c + 6] };
       for (int i = 0; i < 9; ++i) {
         if (nums[i] != 0 && !ranges::contains(col2, nums[i])) {
-          result[r][c] = nums[i];
+          result[b][c] = nums[i];
           nums[i] = 0;
           break;
         }
@@ -88,17 +88,18 @@ static SudokuRow create_random_fr_valid_row1(std::mt19937 &rng, const SudokuRow 
     }
   }
 
+  // fill an empty cell in the last box
   ranges::sort(nums, std::ranges::greater());
-  for (int lr = 0; lr < 3; ++lr) {
-    if (result[2][lr] != 0) continue;
-    const array<int, 3> upcol{ row0[2][lr], row0[2][lr + 3], row0[2][lr + 6] };
-    for (int r = 0; r < 3; ++r) {
+  for (int lb = 0; lb < 3; ++lb) {
+    if (result[2][lb] != 0) continue;
+    const array<int, 3> upcol{ row0[2][lb], row0[2][lb + 3], row0[2][lb + 6] };
+    for (int b = 0; b < 3; ++b) {
       for (int c = 0; c < 3; ++c) {
         for (int i = 0; i < 9; ++i) {
-          const array<int, 3> col2{ row0[r][c], row0[r][c + 3], row0[r][c + 6] };
-          if (!ranges::contains(col2, nums[0]) && !ranges::contains(upcol, result[r][c])) {
-            result[2][lr] = result[r][c];
-            result[r][c] = nums[0];
+          const array<int, 3> col2{ row0[b][c], row0[b][c + 3], row0[b][c + 6] };
+          if (!ranges::contains(col2, nums[0]) && !ranges::contains(upcol, result[b][c])) {
+            result[2][lb] = result[b][c];
+            result[b][c] = nums[0];
             goto DONE;
           }
         }
@@ -108,51 +109,45 @@ static SudokuRow create_random_fr_valid_row1(std::mt19937 &rng, const SudokuRow 
   DONE:;
 
   // fill other two rows
-  nums = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-  array<int, 6> available{};
-  for (int r = 0; r < 3; ++r) {
-    available = {
-      result[(r + 1) % 3][0],
-      result[(r + 1) % 3][1],
-      result[(r + 1) % 3][2],
-      result[(r + 2) % 3][0],
-      result[(r + 2) % 3][1],
-      result[(r + 2) % 3][2]
-    };
-    for (int c = 0; c < 3; ++c) {
-      const array<int, 3> upcol{ row0[r][c], row0[r][c + 3], row0[r][c + 6] };
-      for (int i = 1; i < 3; ++i) {
-        ranges::shuffle(available, rng);
-        for (int &n : available) {
-          if (n == 0 || ranges::contains(upcol, n))
-            continue;
-          result[r][c + 3 * i] = n;
-          n = 0;
-          break;
-        }
+  for (int b = 0; b < 3; ++b) {
+    nums = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+    for (int n : result[b])
+      if (n != 0) nums[n - 1] = 0;
+    ranges::shuffle(nums, rng);
+    for (int i = 3; i < 9; ++i) {
+      const array<int, 3> upcol{ row0[b][i % 3], row0[b][i % 3 + 3], row0[b][i % 3 + 6] };
+      for (int &n : nums) {
+        if (n == 0 || ranges::contains(upcol, n))
+          continue;
+        result[b][i] = n;
+        n = 0;
+        break;
       }
     }
   }
 
-  // 이미 정해진 첫번째 행을 제외하고 다른 숫자와 바꾼다.
-  for (int r = 0; r < 3; ++r) {
-    for (int c = 0; c < 3; ++c) {
-      for (int rn = 1; rn < 3; ++rn) {
-        if (result[r][c + 3 * rn] != 0) continue;
-        int num;
-        for (int n : nums) {
-          if (!ranges::contains(result[r], n)) {
-            num = n;
-            break;
-          }
+  // find and fill the empty cell
+  // nums = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+  for (int b = 0; b < 3; ++b) {
+    for (int bn = 6; bn < 9; ++bn) {
+      if (result[b][bn] != 0)
+        continue;
+      // get the missing number in this box
+      int num;
+      for (int n : { 1, 2, 3, 4, 5, 6, 7, 8, 9 }) {
+        if (!ranges::contains(result[b], n)) {
+          num = n;
+          break;
         }
-        const array<int, 3> upcol{ row0[r][c], row0[r][c + 3], row0[r][c + 6] };
-        for (int i = 1; i < 3; ++i) {
-          if (!ranges::contains(upcol, result[r][(c + i) % 3 + 3])) {
-            result[r][c + 3 * rn] = result[r][(c + i) % 3 + 3];
-            result[r][(c + i) % 3 + 3] = num;
-            break;
-          }
+      }
+      // swap it with the valid number in this box
+      // (don't find from the first row because its value has been fixed by the previous step)
+      const array<int, 3> upcol{ row0[b][bn % 3], row0[b][bn % 3 + 3], row0[b][bn % 3 + 6] };
+      for (int i = 3; i < 9; ++i) {
+        if (i != bn - 3 && i != bn && !ranges::contains(upcol, result[b][i])) {
+          result[b][bn] = result[b][i];
+          result[b][i] = num;
+          break;
         }
       }
     }
@@ -178,7 +173,6 @@ static SudokuRow create_random_fr_valid_row2(std::mt19937 &rng, const SudokuRow 
   };
 
   // TODO: review this algorithm
-  // FIXME: this algorithm can produce overlapping numbers
   // I don't know how this works...
   array<int, 9> fr{
     cols[0][0],
@@ -194,12 +188,12 @@ static SudokuRow create_random_fr_valid_row2(std::mt19937 &rng, const SudokuRow 
   int p = 0;
   while (true) {
     for (int i = 0; i < 9; ++i) {
-      int num = fr[i];
+      int num = cols[i][0];
       fr[i] = 0;
       if (ranges::contains(fr, num)) {
         cols[i][0] = cols[i][1 + p];
         cols[i][1 + p] = num;
-        p = p == 0 ? 1 : 0;
+        p ^= 1;
       }
       fr[i] = cols[i][0];
     }
@@ -239,9 +233,9 @@ static void apply_to(SudokuRow &row, const SudokuRowRows &rr) {
 }
 
 static void make_valid_rr(SudokuRowRows &rr) {
-  // FIXME: this algorithm sometimes can't fill some cells
+  // FIXME: this can be infinite loop
   std::cout << "-> running the algorithm... (sr[1], sr[2])\n";
-  int lastpos = 0;
+  int lastpos = -1;
   for (int i = 0; i < 9;) {
     // find overlapping
     if (ranges::count(rr[1], rr[1][i]) == 2) {
@@ -253,13 +247,12 @@ static void make_valid_rr(SudokuRowRows &rr) {
       // follow the overlapping index
       if (overlap_index != -1) {
         i = overlap_index;
+        // lastpos = -1;
       } else {
-        ++lastpos;
-        i = lastpos;
+        i = ++lastpos;
       }
     } else {
-      ++lastpos;
-      i = lastpos;
+      i = ++lastpos;
     }
   }
 
@@ -282,8 +275,7 @@ static void make_valid(SudokuRow &row) {
 }
 
 static bool check_valid(SudokuGrid grid) {
-  // TODO: check if the given sudoku grid is valid
-
+  // check if the given sudoku grid is valid
   const array<int, 9> nums{ 1, 2, 3, 4, 5, 6, 7, 8, 9 };
   // check rows
   std::cout << "checking grid rows...\n";
@@ -407,6 +399,7 @@ int main() {
   SudokuRow row0 = create_random_fr_valid_row0(rng);
   SudokuRow row1 = create_random_fr_valid_row1(rng, row0);
   SudokuRow row2 = create_random_fr_valid_row2(rng, row0, row1);
+  // SudokuRow row2 = {};
 
   // this algorithm fills each row with 1 to 9
   // (but it skips the first row because it is already filled with 1 to 9 by the previous step)
