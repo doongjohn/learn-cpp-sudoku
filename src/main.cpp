@@ -292,15 +292,16 @@ static bool check_valid(SudokuGrid grid) {
           grid[9 * i + 8]
         }
       );
-    std::cout << grid[9 * i] << ' ';
-    std::cout << grid[9 * i + 1] << ' ';
-    std::cout << grid[9 * i + 2] << ' ';
-    std::cout << grid[9 * i + 3] << ' ';
-    std::cout << grid[9 * i + 4] << ' ';
-    std::cout << grid[9 * i + 5] << ' ';
-    std::cout << grid[9 * i + 6] << ' ';
-    std::cout << grid[9 * i + 7] << ' ';
-    std::cout << grid[9 * i + 8] << '\n';
+    std::cout
+      << grid[9 * i] << ' '
+      << grid[9 * i + 1] << ' '
+      << grid[9 * i + 2] << ' '
+      << grid[9 * i + 3] << ' '
+      << grid[9 * i + 4] << ' '
+      << grid[9 * i + 5] << ' '
+      << grid[9 * i + 6] << ' '
+      << grid[9 * i + 7] << ' '
+      << grid[9 * i + 8] << '\n';
     if (count != 9) {
       std::cout << "invalid at " << i << '\n';
       return false;
@@ -322,15 +323,16 @@ static bool check_valid(SudokuGrid grid) {
           grid[i + 72]
         }
       );
-    std::cout << grid[i] << ' ';
-    std::cout << grid[i + 9] << ' ';
-    std::cout << grid[i + 18] << ' ';
-    std::cout << grid[i + 27] << ' ';
-    std::cout << grid[i + 36] << ' ';
-    std::cout << grid[i + 45] << ' ';
-    std::cout << grid[i + 54] << ' ';
-    std::cout << grid[i + 63] << ' ';
-    std::cout << grid[i + 72] << '\n';
+    std::cout
+      << grid[i] << ' '
+      << grid[i + 9] << ' '
+      << grid[i + 18] << ' '
+      << grid[i + 27] << ' '
+      << grid[i + 36] << ' '
+      << grid[i + 45] << ' '
+      << grid[i + 54] << ' '
+      << grid[i + 63] << ' '
+      << grid[i + 72] << '\n';
     if (count != 9) {
       std::cout << "invalid at " << i << '\n';
       return false;
@@ -352,15 +354,16 @@ static bool check_valid(SudokuGrid grid) {
           grid[i * 3 + i / 3 * 18 + 20]
         }
       );
-    std::cout << grid[i * 3 + i / 3 * 18] << ' ';
-    std::cout << grid[i * 3 + i / 3 * 18 + 1] << ' ';
-    std::cout << grid[i * 3 + i / 3 * 18 + 2] << ' ';
-    std::cout << grid[i * 3 + i / 3 * 18 + 9] << ' ';
-    std::cout << grid[i * 3 + i / 3 * 18 + 10] << ' ';
-    std::cout << grid[i * 3 + i / 3 * 18 + 11] << ' ';
-    std::cout << grid[i * 3 + i / 3 * 18 + 18] << ' ';
-    std::cout << grid[i * 3 + i / 3 * 18 + 19] << ' ';
-    std::cout << grid[i * 3 + i / 3 * 18 + 20] << '\n';
+    std::cout
+      << grid[i * 3 + i / 3 * 18] << ' '
+      << grid[i * 3 + i / 3 * 18 + 1] << ' '
+      << grid[i * 3 + i / 3 * 18 + 2] << ' '
+      << grid[i * 3 + i / 3 * 18 + 9] << ' '
+      << grid[i * 3 + i / 3 * 18 + 10] << ' '
+      << grid[i * 3 + i / 3 * 18 + 11] << ' '
+      << grid[i * 3 + i / 3 * 18 + 18] << ' '
+      << grid[i * 3 + i / 3 * 18 + 19] << ' '
+      << grid[i * 3 + i / 3 * 18 + 20] << '\n';
     if (count != 9) {
       std::cout << "invalid at " << i << '\n';
       return false;
