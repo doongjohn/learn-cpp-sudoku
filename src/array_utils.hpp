@@ -1,6 +1,5 @@
 #pragma once
 
-#include <span>
 #include <array>
 #include <ranges>
 #include "ranges_utils.hpp"
