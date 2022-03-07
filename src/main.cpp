@@ -299,73 +299,9 @@ static void make_valid(SudokuRow &row) {
   apply_to(row, rr);
 }
 
-static bool check_valid(SudokuGrid grid) {
-  // check if the given sudoku grid is valid
-  const array<int, 9> nums{ 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-  // check rows
-  std::cout << "checking grid rows...\n";
-  for (int i = 0; i < 9; ++i) {
-    int count = array_eq_count_sorted(
-        nums, array{
-          grid[9 * i],
-          grid[9 * i + 1],
-          grid[9 * i + 2],
-          grid[9 * i + 3],
-          grid[9 * i + 4],
-          grid[9 * i + 5],
-          grid[9 * i + 6],
-          grid[9 * i + 7],
-          grid[9 * i + 8]
-        }
-      );
-    std::cout
-      << grid[9 * i] << ' '
-      << grid[9 * i + 1] << ' '
-      << grid[9 * i + 2] << ' '
-      << grid[9 * i + 3] << ' '
-      << grid[9 * i + 4] << ' '
-      << grid[9 * i + 5] << ' '
-      << grid[9 * i + 6] << ' '
-      << grid[9 * i + 7] << ' '
-      << grid[9 * i + 8] << '\n';
-    if (count != 9) {
-      std::cout << "invalid at " << i << '\n';
-      return false;
-    }
-  }
-  // check columns
-  std::cout << "checking grid columns...\n";
-  for (int i = 0; i < 9; ++i) {
-    int count = array_eq_count_sorted(
-        nums, array{
-          grid[i],
-          grid[i + 9],
-          grid[i + 18],
-          grid[i + 27],
-          grid[i + 36],
-          grid[i + 45],
-          grid[i + 54],
-          grid[i + 63],
-          grid[i + 72]
-        }
-      );
-    std::cout
-      << grid[i] << ' '
-      << grid[i + 9] << ' '
-      << grid[i + 18] << ' '
-      << grid[i + 27] << ' '
-      << grid[i + 36] << ' '
-      << grid[i + 45] << ' '
-      << grid[i + 54] << ' '
-      << grid[i + 63] << ' '
-      << grid[i + 72] << '\n';
-    if (count != 9) {
-      std::cout << "invalid at " << i << '\n';
-      return false;
-    }
-  }
-  // check boxes
+static bool is_valid_boxes(SudokuGrid grid) {
   std::cout << "checking grid boxes...\n";
+  const array<int, 9> nums{ 1, 2, 3, 4, 5, 6, 7, 8, 9 };
   for (int i = 0; i < 9; ++i) {
     int count = array_eq_count_sorted(
         nums, array{
@@ -396,6 +332,83 @@ static bool check_valid(SudokuGrid grid) {
     }
   }
   return true;
+}
+
+static bool is_valid_rows(SudokuGrid grid) {
+  std::cout << "checking grid rows...\n";
+  const array<int, 9> nums{ 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+  for (int i = 0; i < 9; ++i) {
+    int count = array_eq_count_sorted(
+        nums, array{
+          grid[9 * i],
+          grid[9 * i + 1],
+          grid[9 * i + 2],
+          grid[9 * i + 3],
+          grid[9 * i + 4],
+          grid[9 * i + 5],
+          grid[9 * i + 6],
+          grid[9 * i + 7],
+          grid[9 * i + 8]
+        }
+      );
+    std::cout
+      << grid[9 * i] << ' '
+      << grid[9 * i + 1] << ' '
+      << grid[9 * i + 2] << ' '
+      << grid[9 * i + 3] << ' '
+      << grid[9 * i + 4] << ' '
+      << grid[9 * i + 5] << ' '
+      << grid[9 * i + 6] << ' '
+      << grid[9 * i + 7] << ' '
+      << grid[9 * i + 8] << '\n';
+    if (count != 9) {
+      std::cout << "invalid at " << i << '\n';
+      return false;
+    }
+  }
+  return true;
+}
+
+static bool is_valid_columns(SudokuGrid grid) {
+  std::cout << "checking grid columns...\n";
+  const array<int, 9> nums{ 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+  for (int i = 0; i < 9; ++i) {
+    int count = array_eq_count_sorted(
+        nums, array{
+          grid[i],
+          grid[i + 9],
+          grid[i + 18],
+          grid[i + 27],
+          grid[i + 36],
+          grid[i + 45],
+          grid[i + 54],
+          grid[i + 63],
+          grid[i + 72]
+        }
+      );
+    std::cout
+      << grid[i] << ' '
+      << grid[i + 9] << ' '
+      << grid[i + 18] << ' '
+      << grid[i + 27] << ' '
+      << grid[i + 36] << ' '
+      << grid[i + 45] << ' '
+      << grid[i + 54] << ' '
+      << grid[i + 63] << ' '
+      << grid[i + 72] << '\n';
+    if (count != 9) {
+      std::cout << "invalid at " << i << '\n';
+      return false;
+    }
+  }
+  return true;
+}
+
+static bool is_valid(SudokuGrid grid) {
+  return
+    is_valid_boxes(grid) &&
+    is_valid_rows(grid) &&
+    is_valid_columns(grid);
 }
 
 static void print(const SudokuGrid &grid) {
@@ -440,7 +453,7 @@ int main() {
     apply_to(grid, { row0, row1, row2 });
     print(grid);
 
-    if (check_valid(grid)) {
+    if (is_valid(grid)) {
       std::cout << "grid valid\n";
     } else {
       std::cout << "grid invalid\n";
