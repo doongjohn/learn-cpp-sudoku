@@ -6,10 +6,10 @@
 #include "ranges_utils.hpp"
 
 template<size_t A, size_t B>
+inline
 static std::array<int, A - B> array_diff(const std::array<int, A> &big, const std::array<int, B> &small) {
   std::array<int, A - B> result{};
-  int n = 0;
-  for (int i = 0; i < A; ++i)
+  for (int i = 0, n = 0; i < A; ++i)
     if (!std::ranges::contains(small, big[i]))
       result[n++] = big[i];
   return result;
@@ -33,6 +33,7 @@ static int array_eq_count_sorted(const std::array<int, A> &a, const std::array<i
 }
 
 template<size_t A, size_t B>
+inline
 static int array_eq_count(std::array<int, A> a, std::array<int, B> b) {
   std::ranges::sort(a);
   return array_eq_count_sorted(a, b);
