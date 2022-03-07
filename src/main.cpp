@@ -37,48 +37,48 @@ static void apply_to(SudokuGrid &grid, const array<SudokuRow, 3> &rows) {
         grid[r * 27 + b * 3 + i + i / 3 * 6] = rows[r][b][i];
 }
 
-static SudokuBox create_random_box(std::mt19937 &rng) {
-  SudokuBox box = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-  ranges::shuffle(box, rng);
-  return box;
-}
-
 static SudokuRow create_random_fr_valid_row0(std::mt19937 &rng) {
   SudokuRow result = {};
-
-  // fill the first row with unique numbers
   array<int, 9> nums{ 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+
+  // fill the first row with 1 to 9
   ranges::shuffle(nums, rng);
-  int n = 0;
-  for (int b = 0; b < 3; ++b) {
-    for (int i = 0; i < 3; ++i) {
-      result[b][i] = nums[n++];
-    }
+  for (int b = 0, n = 0; b < 3; ++b) {
+    result[b][0] = nums[n++];
+    result[b][1] = nums[n++];
+    result[b][2] = nums[n++];
   }
 
   // fill other two rows
   for (int b = 0; b < 3; ++b) {
     ranges::shuffle(nums, rng);
-    n = 0;
-    for (int i = 3; i < 9; ++n) {
+    for (int i = 3, n = 0; i < 9;) {
       if (result[b][0] != nums[n] && result[b][1] != nums[n] && result[b][2] != nums[n])
         result[b][i++] = nums[n];
+      ++n;
     }
   }
+
   return result;
 }
 
 static SudokuRow create_random_fr_valid_row1(std::mt19937 &rng, const SudokuRow row0) {
   SudokuRow result{};
-
-  // fill the first row with random unique numbers
   array<int, 9> nums{ 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+
+  // fill the first row with 1 to 9
   ranges::shuffle(nums, rng);
   for (int b = 0; b < 3; ++b) {
     for (int c = 0; c < 3; ++c) {
-      const array<int, 3> col2{ row0[b][c], row0[b][c + 3], row0[b][c + 6] };
       for (int i = 0; i < 9; ++i) {
-        if (nums[i] != 0 && !ranges::contains(col2, nums[i])) {
+        if (
+          // check zero
+          nums[i] != 0 &&
+          // check upper column
+          row0[b][c] != nums[i] &&
+          row0[b][c + 3] != nums[i] &&
+          row0[b][c + 6] != nums[i]
+        ) {
           result[b][c] = nums[i];
           nums[i] = 0;
           break;
@@ -86,64 +86,91 @@ static SudokuRow create_random_fr_valid_row1(std::mt19937 &rng, const SudokuRow 
       }
     }
   }
-
   // fill an empty cell in the last box
-  ranges::sort(nums, std::ranges::greater());
   for (int lb = 0; lb < 3; ++lb) {
-    if (result[2][lb] != 0) continue;
-    const array<int, 3> upcol{ row0[2][lb], row0[2][lb + 3], row0[2][lb + 6] };
+    // skip if not empty
+    if (result[2][lb] != 0)
+      continue;
+    // get the missing number
+    int num = 0;
+    for (int n : nums) if (n != 0) { num = n; break; }
+    // resolve the missing number
     for (int b = 0; b < 3; ++b) {
       for (int c = 0; c < 3; ++c) {
         for (int i = 0; i < 9; ++i) {
-          const array<int, 3> col2{ row0[b][c], row0[b][c + 3], row0[b][c + 6] };
-          if (!ranges::contains(col2, nums[0]) && !ranges::contains(upcol, result[b][c])) {
+          if (
+            // check upper column of the epmty cell
+            row0[2][lb] != result[b][c] &&
+            row0[2][lb + 3] != result[b][c] &&
+            row0[2][lb + 6] != result[b][c] &&
+            // check upper column of the target cell
+            row0[b][c] != num &&
+            row0[b][c + 3] != num &&
+            row0[b][c + 6] != num
+          ) {
+            // put the target cells number in the empty cell
+            // and put the missing number in the target cell
             result[2][lb] = result[b][c];
-            result[b][c] = nums[0];
-            goto DONE;
+            result[b][c] = num;
+            // exit the loop because there can be only one empty cell
+            goto LOOP_EXIT;
           }
         }
       }
     }
   }
-  DONE:;
+  LOOP_EXIT:;
 
   // fill other two rows
   for (int b = 0; b < 3; ++b) {
     nums = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-    for (int n : result[b])
-      if (n != 0) nums[n - 1] = 0;
+    // exclude already used numbers in this box
+    for (int n : result[b]) if (n != 0) nums[n - 1] = 0;
     ranges::shuffle(nums, rng);
     for (int i = 3; i < 9; ++i) {
-      const array<int, 3> upcol{ row0[b][i % 3], row0[b][i % 3 + 3], row0[b][i % 3 + 6] };
       for (int &n : nums) {
-        if (n == 0 || ranges::contains(upcol, n))
-          continue;
-        result[b][i] = n;
-        n = 0;
-        break;
+        if (
+          // check zero
+          n != 0 &&
+          // check upper column
+          row0[b][i % 3] != n &&
+          row0[b][i % 3 + 3] != n &&
+          row0[b][i % 3 + 6] != n
+        ) {
+          result[b][i] = n;
+          n = 0;
+          break;
+        }
       }
     }
   }
-
   // find and fill the empty cell
-  // nums = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
   for (int b = 0; b < 3; ++b) {
     for (int bn = 6; bn < 9; ++bn) {
+      // skip if not empty
       if (result[b][bn] != 0)
         continue;
       // get the missing number in this box
       int num;
-      for (int n : { 1, 2, 3, 4, 5, 6, 7, 8, 9 }) {
+      for (int n = 1; n < 10; ++n) {
         if (!ranges::contains(result[b], n)) {
           num = n;
           break;
         }
       }
-      // swap it with the valid number in this box
-      // (don't find from the first row because its value has been fixed by the previous step)
-      const array<int, 3> upcol{ row0[b][bn % 3], row0[b][bn % 3 + 3], row0[b][bn % 3 + 6] };
+      // resolve the missing number
+      // (skip the first row because its value has been fixed by the previous step)
       for (int i = 3; i < 9; ++i) {
-        if (i != bn - 3 && i != bn && !ranges::contains(upcol, result[b][i])) {
+        if (
+          // check self or upper cell
+          i != bn && i != bn - 3 &&
+          // check upper column
+          row0[b][bn % 3] != result[b][i] &&
+          row0[b][bn % 3 + 3] != result[b][i] &&
+          row0[b][bn % 3 + 6] != result[b][i]
+        ) {
+          // put the target cells number in the empty cell
+          // and put the missing number in the target cell
           result[b][bn] = result[b][i];
           result[b][i] = num;
           break;
