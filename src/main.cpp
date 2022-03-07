@@ -199,8 +199,7 @@ static SudokuRow create_random_fr_valid_row2(std::mt19937 &rng, const SudokuRow 
   };
 
   // TODO: review this algorithm
-  // maybe it has a chance to loop infinitely?
-  // I don't know how this is working...
+  // I don't know how this is working... it may loop infinitely...
   array<int, 9> fr{
     cols[0][0],
     cols[1][0],
